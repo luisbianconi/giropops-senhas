@@ -1,0 +1,40 @@
+name: CI/CD - Build and Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v3
+
+      - name: Login no GHCR
+        run: echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u ${{ secrets.GHCR_USERNAME }} --password-stdin
+
+      - name: Build e push da imagem Docker
+        run: |
+          IMAGE_TAG=${{ github.sha }}
+          docker build -t ghcr.io/luisbianconi/giropops-senhas:$IMAGE_TAG .
+          docker push ghcr.io/luisbianconi/giropops-senhas:$IMAGE_TAG
+
+      - name: Clonar repositório GitOps
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          git clone https://luisbianconi:${{ secrets.GITOPS_REPO_TOKEN }}@github.com/luisbianconi/giropops-gitops.git
+
+          cd giropops-gitops/apps/giropops-senhas
+
+          # Atualiza a tag da imagem no deployment
+          sed -i "s|image: ghcr.io/luisbianconi/giropops-senhas:.*|image: ghcr.io/luisbianconi/giropops-senhas:${{ github.sha }}|" deployment-app.yaml
+
+          git add deployment-app.yaml
+          git commit -m "Atualiza imagem giropops-senhas para ${{ github.sha }}"
+          git push origin main
+
