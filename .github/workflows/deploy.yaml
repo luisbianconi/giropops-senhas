@@ -40,8 +40,11 @@ jobs:
             exit 1
           fi
 
-          git add deployment-app.yaml
-          git commit -m "Atualiza imagem giropops-senhas para ${IMAGE_TAG}"
-          git push origin main
-
-
+          if ! git diff --quiet; then
+            git add deployment-app.yaml
+            git commit -m "Atualiza imagem giropops-senhas para ${IMAGE_TAG}"
+            git push origin main
+            echo "✅ Commit enviado para o repositório GitOps."
+          else
+            echo "ℹ️ Nada para commitar. O deployment já está usando a imagem ${IMAGE_TAG}."
+          fi
