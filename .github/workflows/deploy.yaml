@@ -28,11 +28,10 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           
           git clone https://luisbianconi:${{ secrets.GITOPS_REPO_TOKEN }}@github.com/luisbianconi/giropops-gitops.git
-
           cd giropops-gitops/apps/giropops-senhas
 
-          # Atualiza a tag da imagem no deployment
-          sed -i "s|image: ghcr.io/luisbianconi/giropops-senhas:.*|image: ghcr.io/luisbianconi/giropops-senhas:${{ github.sha }}|" deployment-app.yaml
+          # Substitui o placeholder __IMAGE_TAG__ pela hash do commit
+          sed -i "s|__IMAGE_TAG__|${{ github.sha }}|" deployment-app.yaml
 
           git add deployment-app.yaml
           git commit -m "Atualiza imagem giropops-senhas para ${{ github.sha }}"
