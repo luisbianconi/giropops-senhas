@@ -22,27 +22,26 @@ jobs:
           docker build -t ghcr.io/luisbianconi/giropops-senhas:$IMAGE_TAG .
           docker push ghcr.io/luisbianconi/giropops-senhas:$IMAGE_TAG
 
-      - name: Clonar repositório GitOps
+      - name: Clonar repositório GitOps e atualizar tag da imagem
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          
+
           git clone https://luisbianconi:${{ secrets.GITOPS_REPO_TOKEN }}@github.com/luisbianconi/giropops-gitops.git
           cd giropops-gitops/apps/giropops-senhas
 
-          # Substitui o placeholder __IMAGE_TAG__ pela hash do commit
-          sed -i "s|__IMAGE_TAG__|${{ github.sha }}|" deployment-app.yaml
+          IMAGE_TAG=${GITHUB_SHA}
 
-                    # Substitui o placeholder
-          sed -i "s|__IMAGE_TAG__|${{ github.sha }}|" deployment-app.yaml
+          echo "🔄 Substituindo __IMAGE_TAG__ por ${IMAGE_TAG}..."
+          sed -i "s|__IMAGE_TAG__|${IMAGE_TAG}|" deployment-app.yaml
 
-          # Evita push se __IMAGE_TAG__ não foi substituído
           if grep -q "__IMAGE_TAG__" deployment-app.yaml; then
             echo "❌ ERRO: placeholder __IMAGE_TAG__ ainda presente. Abortando push para o GitOps!"
             exit 1
           fi
-          
+
           git add deployment-app.yaml
-          git commit -m "Atualiza imagem giropops-senhas para ${{ github.sha }}"
+          git commit -m "Atualiza imagem giropops-senhas para ${IMAGE_TAG}"
           git push origin main
+
 
