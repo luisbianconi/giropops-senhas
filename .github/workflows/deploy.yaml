@@ -32,11 +32,11 @@ jobs:
 
           IMAGE_TAG=${GITHUB_SHA}
 
-          echo "🔄 Substituindo __IMAGE_TAG__ por ${IMAGE_TAG}..."
+          echo "Substituindo __IMAGE_TAG__ por ${IMAGE_TAG}..."
           sed -i "s|__IMAGE_TAG__|${IMAGE_TAG}|" deployment-app.yaml
 
           if grep -q "__IMAGE_TAG__" deployment-app.yaml; then
-            echo "❌ ERRO: placeholder __IMAGE_TAG__ ainda presente. Abortando push para o GitOps!"
+            echo " ERRO: placeholder __IMAGE_TAG__ ainda presente. Abortando push para o GitOps!"
             exit 1
           fi
 
@@ -44,7 +44,7 @@ jobs:
             git add deployment-app.yaml
             git commit -m "Atualiza imagem giropops-senhas para ${IMAGE_TAG}"
             git push origin main
-            echo "✅ Commit enviado para o repositório GitOps."
+            echo " Commit enviado para o repositório GitOps."
           else
-            echo "ℹ️ Nada para commitar. O deployment já está usando a imagem ${IMAGE_TAG}."
+            echo " Nada para commitar. O deployment já está usando a imagem ${IMAGE_TAG}."
           fi
