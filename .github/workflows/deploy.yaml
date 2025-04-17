@@ -13,6 +13,13 @@ jobs:
       - name: Checkout do código
         uses: actions/checkout@v3
 
+      - name: Análise de código com SonarCloud
+        uses: SonarSource/sonarcloud-github-action@v1.9
+        with:
+          organization: luisbianconi
+          projectKey: luisbianconi_giropops-senhas
+          token: ${{ secrets.SONAR_TOKEN }}
+
       - name: Login no GHCR
         run: echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u ${{ secrets.GHCR_USERNAME }} --password-stdin
 
