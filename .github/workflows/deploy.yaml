@@ -13,12 +13,20 @@ jobs:
       - name: Checkout do código
         uses: actions/checkout@v3
 
-      - name: Análise de código com SonarCloud
-        uses: SonarSource/sonarcloud-github-action@v1.9
-        with:
-          organization: luisbianconi
-          projectKey: luisbianconi_giropops-senhas
-          token: ${{ secrets.SONAR_TOKEN }}
+      - name: Baixar e rodar SonarScanner
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          curl -sSLo sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-linux.zip
+          unzip sonar-scanner.zip
+          mv sonar-scanner-*/ sonar-scanner
+          ./sonar-scanner/bin/sonar-scanner \
+            -Dsonar.projectKey=luisbianconi_giropops-senhas \
+            -Dsonar.organization=luisbianconi \
+            -Dsonar.sources=. \
+            -Dsonar.host.url=https://sonarcloud.io \
+            -Dsonar.login=$SONAR_TOKEN
+
 
       - name: Login no GHCR
         run: echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u ${{ secrets.GHCR_USERNAME }} --password-stdin
