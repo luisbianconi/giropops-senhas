@@ -12,10 +12,6 @@ jobs:
   build-and-push:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-      - name: Build e Push GHCR
-
       - name: Baixar e rodar SonarScanner
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -83,7 +79,6 @@ jobs:
 
           git clone https://luisbianconi:${{ secrets.GITOPS_REPO_TOKEN }}@github.com/luisbianconi/giropops-gitops.git
           cd giropops-gitops/apps/giropops-senhas/overlays/prod
-
 
           echo "Substituindo __IMAGE_TAG__ por ${IMAGE_TAG}..."
           sed -i "s|__IMAGE_TAG__|${IMAGE_TAG}|" deployment-app.yaml
