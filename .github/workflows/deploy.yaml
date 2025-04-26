@@ -5,13 +5,16 @@ on:
     branches:
       - main
 
-jobs:
-  build-and-deploy:
-    runs-on: ubuntu-latest
+env:
+  IMAGE_TAG: ${{ github.sha }}
 
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout do código
+      - name: Checkout
         uses: actions/checkout@v3
+      - name: Build e Push GHCR
 
       - name: Baixar e rodar SonarScanner
         env:
@@ -27,25 +30,60 @@ jobs:
             -Dsonar.host.url=https://sonarcloud.io \
             -Dsonar.login=$SONAR_TOKEN
 
-
       - name: Login no GHCR
         run: echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u ${{ secrets.GHCR_USERNAME }} --password-stdin
 
       - name: Build e push da imagem Docker
         run: |
-          IMAGE_TAG=${{ github.sha }}
           docker build -t ghcr.io/luisbianconi/giropops-senhas:$IMAGE_TAG .
           docker push ghcr.io/luisbianconi/giropops-senhas:$IMAGE_TAG
 
-      - name: Clonar repositório GitOps e atualizar tag da imagem
+
+  deploy-dev:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clonar repositório GitOps e atualizar tag da imagem DEV
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
           git clone https://luisbianconi:${{ secrets.GITOPS_REPO_TOKEN }}@github.com/luisbianconi/giropops-gitops.git
-          cd giropops-gitops/apps/giropops-senhas/base
+          cd giropops-gitops/apps/giropops-senhas/overlays/dev
 
-          IMAGE_TAG=${GITHUB_SHA}
+          echo "Substituindo __IMAGE_TAG__ por ${IMAGE_TAG}..."
+          sed -i "s|__IMAGE_TAG__|${IMAGE_TAG}|" deployment-app.yaml
+
+          if grep -q "__IMAGE_TAG__" deployment-app.yaml; then
+            echo " ERRO: placeholder __IMAGE_TAG__ ainda presente. Abortando push para o GitOps!"
+            exit 1
+          fi
+
+          if ! git diff --quiet; then
+            git add deployment-app.yaml
+            git commit -m "Atualiza imagem giropops-senhas para ${IMAGE_TAG}"
+            git push origin main
+            echo " Commit enviado para o repositório GitOps."
+          else
+            echo " Nada para commitar. O deployment já está usando a imagem ${IMAGE_TAG}."
+          fi
+    
+
+  deploy-prod:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://prodlabs.luisbianconi.com
+    steps:
+      - name: Clonar repositório GitOps e atualizar tag da imagem PROD
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+          git clone https://luisbianconi:${{ secrets.GITOPS_REPO_TOKEN }}@github.com/luisbianconi/giropops-gitops.git
+          cd giropops-gitops/apps/giropops-senhas/overlays/prod
+
 
           echo "Substituindo __IMAGE_TAG__ por ${IMAGE_TAG}..."
           sed -i "s|__IMAGE_TAG__|${IMAGE_TAG}|" deployment-app.yaml
