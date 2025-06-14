@@ -1,0 +1,12 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: giropops-senhas
+  description: Gerador de senhas com Redis e frontend
+  annotations:
+    argocd/app-name: giropops-senhas
+spec:
+  type: service
+  lifecycle: production
+  owner: luis.bianconi
+
